@@ -173,5 +173,9 @@ FUEL_ROUTE = {
     # Stations further than this from the route are ignored.
     'MAX_DETOUR_MILES': 5,
     'STATIONS_CSV': BASE_DIR / 'data' / 'fuel-prices-for-be-assessment.csv',
-    'PLACES_CSV': BASE_DIR / 'data' / 'us_places.csv',
+    # City coordinates: Census gazetteer, plus a few towns geocoded once offline.
+    'PLACES_CSVS': [
+        BASE_DIR / 'data' / 'us_places.csv',
+        BASE_DIR / 'data' / 'us_places_extra.csv',
+    ],
 }
