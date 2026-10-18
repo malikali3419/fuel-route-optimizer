@@ -80,6 +80,11 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['fuel_summary'], self.post().json()['fuel_summary'])
 
+    def test_trailing_slash_is_optional(self):
+        body = {'start': '35.0,-100.0', 'finish': '35.0,-88.0'}
+        self.assertEqual(self.client.post('/api/route', body, format='json').status_code, 200)
+        self.assertEqual(self.client.get('/api/route/map', body).status_code, 200)
+
     def test_missing_field_is_rejected(self):
         response = self.client.post('/api/route/', {'start': 'Dallas, TX'}, format='json')
         self.assertEqual(response.status_code, 400)
