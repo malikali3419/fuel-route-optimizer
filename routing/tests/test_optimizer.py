@@ -78,3 +78,13 @@ class PlanFuelStopsTests(SimpleTestCase):
     def test_no_stations_is_infeasible(self):
         with self.assertRaises(NoFeasiblePlan):
             plan_fuel_stops([], total_miles=100, range_miles=500, mpg=10)
+
+    def test_stop_penalty_trades_cents_for_fewer_stops(self):
+        # Each station is a cent cheaper than the last, so the cheapest plan stops at all of them.
+        stations = [Candidate(m, 3.10 - i * 0.01) for i, m in enumerate(range(0, 500, 50))]
+        cheapest = plan_fuel_stops(stations, total_miles=500, range_miles=500, mpg=10)
+        practical = plan_fuel_stops(stations, total_miles=500, range_miles=500, mpg=10, stop_penalty=10)
+        self.assertEqual(len(cheapest.purchases), 10)
+        self.assertEqual(len(practical.purchases), 1)
+        self.assertAlmostEqual(practical.total_gallons, 50)
+        self.assertLess(cheapest.total_cost, practical.total_cost)

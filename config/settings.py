@@ -172,6 +172,9 @@ FUEL_ROUTE = {
     'MILES_PER_GALLON': 10,
     # Stations further than this from the route are ignored.
     'MAX_DETOUR_MILES': 5,
+    # Dollar cost charged per fuel stop when planning (the driver's time), so
+    # the plan doesn't stop every few miles to save a cent per gallon.
+    'DEFAULT_STOP_COST': 10.0,
     'STATIONS_CSV': BASE_DIR / 'data' / 'fuel-prices-for-be-assessment.csv',
     # City coordinates: Census gazetteer, plus a few towns geocoded once offline.
     'PLACES_CSVS': [
