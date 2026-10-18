@@ -80,7 +80,7 @@ Errors: `400` for invalid input or a location outside the USA, `422` when part o
 
 ### `GET /api/route/map/?start=...&finish=...`
 
-An HTML page that draws the route and the numbered fuel stops on an OpenStreetMap map (Leaflet), with the cost breakdown alongside. `map_url` in the API response links here.
+An HTML page that draws the route and the numbered fuel stops on a Leaflet map (CARTO tiles, OpenStreetMap data), with the cost breakdown alongside. `map_url` in the API response links here.
 
 ## How it works
 
