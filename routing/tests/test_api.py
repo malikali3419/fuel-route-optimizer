@@ -86,6 +86,12 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.get_route.assert_not_called()
 
+    def test_non_us_state_code_is_rejected_without_api_calls(self):
+        with mock.patch('routing.services.geocoding.requests.get') as http_get:
+            response = self.post(start='Toronto, ON')
+        self.assertEqual(response.status_code, 400)
+        http_get.assert_not_called()
+
     def test_gap_longer_than_range_is_unprocessable(self):
         FuelStation.objects.filter(longitude__gt=-97, longitude__lt=-89).delete()
         get_station_index.cache_clear()

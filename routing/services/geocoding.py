@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import requests
 from django.conf import settings
 
-from .places import lookup_city
+from .places import US_STATES, lookup_city
 
 # Generous box around the contiguous US, Alaska and Hawaii.
 US_BOUNDS = {'min_lat': 18.0, 'max_lat': 72.0, 'min_lon': -180.0, 'max_lon': -65.0}
@@ -65,6 +65,8 @@ def _from_gazetteer(query):
     match = CITY_STATE_RE.match(query)
     if match:
         city, state = match.group(1), match.group(2).upper()
+        if state not in US_STATES:  # e.g. "Toronto, ON"
+            raise GeocodingError(f'"{state}" in "{query}" is not a US state code.')
         coords = lookup_city(city, state)
         if coords:
             return Location(query, f'{city.title()}, {state}', coords[0], coords[1], 'gazetteer')
