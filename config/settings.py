@@ -147,13 +147,14 @@ REST_FRAMEWORK = {
 }
 
 
-# Cache: route responses are cached so repeated trips skip the routing API.
+# Cache: routes are cached on disk so repeated trips skip the routing API,
+# even after a server restart.
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'fuel-route',
-        'TIMEOUT': 60 * 60 * 24,
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / '.cache',
+        'TIMEOUT': 60 * 60 * 24 * 7,
     }
 }
 

@@ -3,10 +3,14 @@
 OpenRouteService is used when ORS_API_KEY is set; otherwise the public OSRM
 server, which needs no key. Both return the full route geometry and distance
 in one response. If OpenRouteService is down, the request falls back to OSRM.
+
+Geometry is requested as an encoded polyline rather than GeoJSON: the same
+route in about a fifth of the bytes, which noticeably speeds up long trips.
 """
 import logging
 from dataclasses import dataclass
 
+import polyline
 import requests
 from django.conf import settings
 
@@ -48,7 +52,7 @@ def get_route(start, finish):
 
 def _ors_route(start, finish, conf):
     response = requests.post(
-        'https://api.openrouteservice.org/v2/directions/driving-hgv/geojson',
+        'https://api.openrouteservice.org/v2/directions/driving-hgv/json',
         json={'coordinates': [[start.lon, start.lat], [finish.lon, finish.lat]]},
         headers={'Authorization': conf['ORS_API_KEY']},
         timeout=conf['ORS_TIMEOUT_SECONDS'],
@@ -56,12 +60,11 @@ def _ors_route(start, finish, conf):
     if response.status_code in (400, 404):
         raise RoutingError(_ors_error_message(response))
     response.raise_for_status()
-    feature = response.json()['features'][0]
-    summary = feature['properties']['summary']
+    route = response.json()['routes'][0]
     return Route(
-        distance_miles=summary['distance'] / METERS_PER_MILE,
-        duration_seconds=summary['duration'],
-        coordinates=[(lat, lon) for lon, lat in feature['geometry']['coordinates']],
+        distance_miles=route['summary']['distance'] / METERS_PER_MILE,
+        duration_seconds=route['summary']['duration'],
+        coordinates=polyline.decode(route['geometry'], 5),
         provider='openrouteservice',
     )
 
@@ -77,7 +80,7 @@ def _osrm_route(start, finish, conf):
     url = f"{conf['OSRM_BASE_URL']}/route/v1/driving/{start.lon},{start.lat};{finish.lon},{finish.lat}"
     response = requests.get(
         url,
-        params={'overview': 'full', 'geometries': 'geojson'},
+        params={'overview': 'full', 'geometries': 'polyline6'},
         headers={'User-Agent': conf['USER_AGENT']},
         timeout=conf['HTTP_TIMEOUT_SECONDS'],
     )
@@ -90,6 +93,6 @@ def _osrm_route(start, finish, conf):
     return Route(
         distance_miles=route['distance'] / METERS_PER_MILE,
         duration_seconds=route['duration'],
-        coordinates=[(lat, lon) for lon, lat in route['geometry']['coordinates']],
+        coordinates=polyline.decode(route['geometry'], 6),
         provider='osrm',
     )
