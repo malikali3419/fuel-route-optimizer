@@ -84,7 +84,7 @@ def _get_trip(start_query, finish_query):
         'miles': geometry.miles.tolist(),
     }
     cache.set(key, trip)
-    return trip, 1 + start.used_api + finish.used_api, False
+    return trip, route.api_calls + start.used_api + finish.used_api, False
 
 
 def _location_payload(location):

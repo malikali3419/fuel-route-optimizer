@@ -167,6 +167,8 @@ FUEL_ROUTE = {
     'OSRM_BASE_URL': os.environ.get('OSRM_BASE_URL', 'https://router.project-osrm.org'),
     'NOMINATIM_URL': os.environ.get('NOMINATIM_URL', 'https://nominatim.openstreetmap.org/search'),
     'HTTP_TIMEOUT_SECONDS': 15,
+    # Kept short so a stalled OpenRouteService falls back to OSRM quickly.
+    'ORS_TIMEOUT_SECONDS': 8,
     'USER_AGENT': 'fuel-route-optimizer/1.0',
     'VEHICLE_RANGE_MILES': 500,
     'MILES_PER_GALLON': 10,
@@ -181,4 +183,12 @@ FUEL_ROUTE = {
         BASE_DIR / 'data' / 'us_places.csv',
         BASE_DIR / 'data' / 'us_places_extra.csv',
     ],
+}
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {'routing': {'handlers': ['console'], 'level': 'INFO'}},
 }

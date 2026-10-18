@@ -92,7 +92,7 @@ request ──► geocode start/finish ──► 1 routing API call ──► st
 
 ### External API calls: one per new trip, zero when repeated
 
-- **Routing:** [OSRM](https://project-osrm.org/) public server by default (no key needed), or [OpenRouteService](https://openrouteservice.org/) truck routing when `ORS_API_KEY` is set. Either returns the whole route geometry and distance in one call.
+- **Routing:** [OSRM](https://project-osrm.org/) public server by default (no key needed), or [OpenRouteService](https://openrouteservice.org/) truck routing when `ORS_API_KEY` is set. Either returns the whole route geometry and distance in one call. If OpenRouteService fails or times out (8 s), the request falls back to OSRM automatically.
 - **Geocoding:** `"City, ST"` and `"lat,lon"` inputs are resolved offline from the US Census Gazetteer, so they cost no API calls. Only other inputs, such as street addresses, use a geocoding call (OpenRouteService or Nominatim). That's three calls at most.
 - **Caching:** the geocoded endpoints and the route are cached per trip, so asking for the same trip again makes no external calls. `meta.external_api_calls` reports the count for each request.
 

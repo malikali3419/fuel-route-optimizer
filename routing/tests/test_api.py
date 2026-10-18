@@ -1,11 +1,15 @@
 from unittest import mock
 
 import numpy as np
+import requests
+from django.conf import settings
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from routing.models import FuelStation
+from routing.services import routing_client
+from routing.services.geocoding import Location
 from routing.services.routing_client import Route
 from routing.services.station_finder import get_station_index, haversine_miles
 
@@ -103,3 +107,18 @@ class RoutePlanApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Total fuel cost')
         self.assertContains(response, 'plan-data')
+
+
+class RoutingFallbackTests(TestCase):
+    def test_falls_back_to_osrm_when_openrouteservice_fails(self):
+        start = Location('a', 'a', 35.0, -100.0, 'coordinates')
+        finish = Location('b', 'b', 35.0, -88.0, 'coordinates')
+        osrm_route = Route(distance_miles=600, duration_seconds=1, coordinates=[(35, -100), (35, -88)], provider='osrm')
+        conf = {**settings.FUEL_ROUTE, 'ORS_API_KEY': 'test-key'}
+        with override_settings(FUEL_ROUTE=conf), \
+                mock.patch.object(routing_client, '_ors_route', side_effect=requests.Timeout('timed out')), \
+                mock.patch.object(routing_client, '_osrm_route', return_value=osrm_route), \
+                self.assertLogs('routing', level='WARNING'):
+            route = routing_client.get_route(start, finish)
+        self.assertEqual(route.provider, 'osrm')
+        self.assertEqual(route.api_calls, 2)

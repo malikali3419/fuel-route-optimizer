@@ -2,12 +2,15 @@
 
 OpenRouteService is used when ORS_API_KEY is set; otherwise the public OSRM
 server, which needs no key. Both return the full route geometry and distance
-in one response.
+in one response. If OpenRouteService is down, the request falls back to OSRM.
 """
+import logging
 from dataclasses import dataclass
 
 import requests
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 METERS_PER_MILE = 1609.344
 
@@ -22,17 +25,25 @@ class Route:
     duration_seconds: float
     coordinates: list  # [(lat, lon), ...] from start to finish
     provider: str
+    api_calls: int = 1
 
 
 def get_route(start, finish):
     """Return the driving Route between two Locations."""
     conf = settings.FUEL_ROUTE
-    try:
-        if conf['ORS_API_KEY']:
+    failed_calls = 0
+    if conf['ORS_API_KEY']:
+        try:
             return _ors_route(start, finish, conf)
-        return _osrm_route(start, finish, conf)
+        except requests.RequestException as exc:
+            logger.warning('OpenRouteService failed, falling back to OSRM: %s', exc)
+            failed_calls = 1
+    try:
+        route = _osrm_route(start, finish, conf)
     except requests.RequestException as exc:
         raise RoutingError(f'Routing service failed: {exc}') from exc
+    route.api_calls += failed_calls
+    return route
 
 
 def _ors_route(start, finish, conf):
@@ -40,7 +51,7 @@ def _ors_route(start, finish, conf):
         'https://api.openrouteservice.org/v2/directions/driving-hgv/geojson',
         json={'coordinates': [[start.lon, start.lat], [finish.lon, finish.lat]]},
         headers={'Authorization': conf['ORS_API_KEY']},
-        timeout=conf['HTTP_TIMEOUT_SECONDS'],
+        timeout=conf['ORS_TIMEOUT_SECONDS'],
     )
     if response.status_code in (400, 404):
         raise RoutingError(_ors_error_message(response))
