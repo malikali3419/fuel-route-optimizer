@@ -23,6 +23,8 @@ def straight_route(*args):
     return Route(distance_miles=distance, duration_seconds=distance * 60, coordinates=coordinates, provider='test')
 
 
+# Keep tests away from the on-disk route cache used by the dev server.
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
 class RoutePlanApiTests(TestCase):
     def setUp(self):
         cache.clear()
